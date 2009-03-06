@@ -125,6 +125,11 @@ class YouTubeG
         "gdata.youtube.com"
       end
       
+      # TODO: if we do not peek into the files we upload, it's not possible to guarantee 
+      # that the boundary is not encountered. However, in this case we prefer that to scanning
+      # 9 megs of files for a substring.
+      # Were the authors of the MIME spec not so unfortunately blind, they would have implemented
+      # Content-Length or Part-Length as an alternative to boundaries for raw data parts
       def boundary 
         "An43094fu"
       end
