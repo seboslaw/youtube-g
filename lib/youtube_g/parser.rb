@@ -6,10 +6,10 @@ class YouTubeG
       end
       
       def parse
-        parse_content open(@url).read
+        parse_content YouTubeG.transport.grab(@url)
       end      
     end
-
+    
     class VideoFeedParser < FeedParser #:nodoc:
       
       def parse_content(content)
@@ -17,7 +17,7 @@ class YouTubeG
         entry = doc.elements["entry"]
         parse_entry(entry)
       end
-
+    
     protected
       def parse_entry(entry) 
         video_id = entry.elements["id"].text

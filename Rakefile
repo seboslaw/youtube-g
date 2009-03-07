@@ -8,7 +8,7 @@ Hoe.new('youtube-g', YouTubeG::VERSION) do |p|
   p.email = 'shanev@gmail.com'
   p.summary = 'Ruby client for the YouTube GData API'
   p.url = 'http://rubyforge.org/projects/youtube-g/'
-  p.extra_deps << 'builder'
+  p.extra_deps << 'builder' << "flexmock"
   p.remote_rdoc_dir = ''
 end
 

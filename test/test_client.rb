@@ -3,6 +3,7 @@ require File.dirname(__FILE__) + '/helper'
 class TestClient < Test::Unit::TestCase
   def setup
     @client = YouTubeG::Client.new
+    YouTubeG.transport = Recorder
   end
 
   def test_should_respond_to_a_basic_query

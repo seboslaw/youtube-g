@@ -58,17 +58,15 @@ class YouTubeG
         
         path = '/feeds/api/users/%s/uploads' % @user
         
-        Net::HTTP.start(uploads_url) do | session |
-          
-          # Use the chained IO as body so that Net::HTTP reads into the socket for us
-          post = Net::HTTP::Post.new(path, upload_headers)
-          post.body_stream = post_body_io
-          
-          response = session.request(post)
-          raise_on_faulty_response(response)
-          
-          return uploaded_video_id_from(response.body)
-        end
+        resp = YouTubeG.transport.post_req(
+          :host => uploads_url,
+          :body => post_body_io,
+          :headers => upload_headers,
+          :path => path
+        )
+        
+        raise_on_faulty_response(response)
+        return uploaded_video_id_from(response.body)
       end
       
       # Updates a video in YouTube.  Requires:
@@ -82,21 +80,15 @@ class YouTubeG
       def update(video_id, options)
         @opts = options
         
-        update_body = video_xml
-        
         update_header = authorization_headers.merge({
           "Content-Type"   => "application/atom+xml",
           "Content-Length" => "#{update_body.length}",
         })
         
         update_url = "/feeds/api/users/#{@user}/uploads/#{video_id}"
-        
-        Net::HTTP.start(base_url) do | session |
-          response = session.put(update_url, update_body, update_header)
-          raise_on_faulty_response(response)
-          
-          return YouTubeG::Parser::VideoFeedParser.new(response.body).parse
-        end
+        YouTubeG.transport.put_req(:path => update_url, :headers => update_header, :body => video_xml)
+        raise_on_faulty_response(response)
+        return YouTubeG::Parser::VideoFeedParser.new(response.body).parse
       end
       
       # Delete a video on YouTube
@@ -107,12 +99,9 @@ class YouTubeG
         })
         
         delete_url = "/feeds/api/users/#{@user}/uploads/#{video_id}"
-        
-        Net::HTTP.start(base_url) do |session|
-          response = session.delete(delete_url, '', delete_header)
-          raise_on_faulty_response(response)
-          return true
-        end
+        YouTubeG.transport.delete_req(:path => delete_url, :headers => delete_header)
+        raise_on_faulty_response(response)
+        true
       end
       
       private
@@ -179,10 +168,11 @@ class YouTubeG
       
       def auth_token
         @auth_token ||= begin
-          http = Net::HTTP.new("www.google.com", 443)
-          http.use_ssl = true
-          body = "Email=#{YouTubeG.esc @user}&Passwd=#{YouTubeG.esc @pass}&service=youtube&source=#{YouTubeG.esc @client_id}"
-          response = http.post("/youtube/accounts/ClientLogin", body, "Content-Type" => "application/x-www-form-urlencoded")
+          response.body = YouTubeG.transport.post_req(
+            :ssl => true, :host => 'www.google.com',
+            :body => "Email=#{YouTubeG.esc @user}&Passwd=#{YouTubeG.esc @pass}&service=youtube&source=#{YouTubeG.esc @client_id}",
+            :path => "/youtube/accounts/ClientLogin"
+          )
           raise UploadError, response.body[/Error=(.+)/,1] if response.code.to_i != 200
           @auth_token = response.body[/Auth=(.+)/, 1]
         end

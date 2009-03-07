@@ -11,21 +11,33 @@ class YouTubeG
   class Error < RuntimeError
   end
   
-  # URL-escape a string. Stolen from Camping (wonder how many Ruby libs in the wild can say the same)
-  def self.esc(s) #:nodoc:
-    s.to_s.gsub(/[^ \w.-]+/n){'%'+($&.unpack('H2'*$&.size)*'%').upcase}.tr(' ', '+')
-  end
+  class <<self
+    # URL-escape a string. Stolen from Camping (wonder how many Ruby libs in the wild can say the same)
+    def esc(s) #:nodoc:
+      s.to_s.gsub(/[^ \w.-]+/n){'%'+($&.unpack('H2'*$&.size)*'%').upcase}.tr(' ', '+')
+    end
   
-  # Set the logger for the library
-  def self.logger=(any_logger)
-    @logger = any_logger
+    # The logger instance and the transport class
+    attr_accessor :logger, :transport
+  
+    # Get the logger for the library (by default will log to STDOUT). TODO: this is where we grab the Rails logger too
+    def logger
+      @logger ||= create_default_logger
+    end
+  
+    # Get the transport class (not instance) used for HTTP requests, can be swapped in
+    def transport
+      @transport ||= Transport
+    end
+    
+    private
+      def create_default_logger
+        logger = Logger.new(STDOUT)
+        logger.level = Logger::DEBUG
+        logger
+      end
   end
 
-  # Get the logger for the library (by default will log to STDOUT). TODO: this is where we grab the Rails logger too
-  def self.logger
-    @logger ||= create_default_logger
-  end
-  
   # Gets mixed into the classes to provide the logger method
   module Logging #:nodoc:
     
@@ -34,17 +46,11 @@ class YouTubeG
       YouTubeG.logger
     end
   end
-    
-  private
-    def self.create_default_logger
-      logger = Logger.new(STDOUT)
-      logger.level = Logger::DEBUG
-      logger
-    end
 end
 
 %w( 
   version
+  transport
   client
   record
   parser
