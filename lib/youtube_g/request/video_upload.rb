@@ -100,7 +100,7 @@ class YouTubeG
         })
         
         delete_url = "/feeds/api/users/#{@user}/uploads/#{video_id}"
-        YouTubeG.transport.delete_req(:path => delete_url, :headers => delete_header)
+        response = YouTubeG.transport.send_req(:method => 'delete', :path => delete_url, :headers => delete_header)
         raise_on_faulty_response(response)
         true
       end
