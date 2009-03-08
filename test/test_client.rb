@@ -164,7 +164,7 @@ class TestClient < Test::Unit::TestCase
   end
   
   def test_should_determine_if_nonembeddable_video_is_embeddable
-    response = @client.videos_by(:query => "avril lavigne girlfriend")
+    response = @client.videos_by(:query => "avril lavigne girlfriend", :max_results => 1)
   
     video = response.videos.first
     assert !video.embeddable?

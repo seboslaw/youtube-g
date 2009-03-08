@@ -58,7 +58,8 @@ class YouTubeG
         
         path = '/feeds/api/users/%s/uploads' % @user
         
-        resp = YouTubeG.transport.post_req(
+        resp = YouTubeG.transport.send_req(
+          :method => 'post',
           :host => uploads_url,
           :body => post_body_io,
           :headers => upload_headers,
@@ -86,7 +87,7 @@ class YouTubeG
         })
         
         update_url = "/feeds/api/users/#{@user}/uploads/#{video_id}"
-        YouTubeG.transport.put_req(:path => update_url, :headers => update_header, :body => video_xml)
+        response = YouTubeG.transport.send_req(:method => 'put', :path => update_url, :headers => update_header, :body => video_xml)
         raise_on_faulty_response(response)
         return YouTubeG::Parser::VideoFeedParser.new(response.body).parse
       end

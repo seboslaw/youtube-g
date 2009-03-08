@@ -21,26 +21,19 @@ class YouTubeG
     
     REQUIRED_OPTIONS = [:host, :port, :path, :method, :headers, :body, :ssl].freeze
     METHODS = %w( get post put delete head )
+    DEFAULT_HEADERS = { 'Content-Type' => 'application/x-www-form-urlencoded' }
     DEFAULTS = { 
       :port => 80,  :method => 'get', :ssl => false, :path => '/',  :body => '',
-      :headers => { 'Content-Type' => 'application/x-www-form-urlencoded' }
+      :headers => DEFAULT_HEADERS
     }
     
     # Grab the page body via GET, open-uri style
-    def self.grab(url, extra_headers = {})
+    def self.grab(url, extra_headers = DEFAULT_HEADERS)
       raise BadRequest, "arg to grab should start with http(s) but was #{url}" unless url =~ /^http(s?)/ # and so on
       uri = URI.parse(url)
-      get_req(:host => uri.host, :path => uri.request_uri, :headers => extra_headers ).body
-    end
-    
-    # Send a GET request
-    def self.get_req(opts = {})
-      send_req(opts.merge(:method => 'get', :body => ''))
-    end
-    
-    # Send a POST request
-    def self.post_req(opts = {})
-      send_req(opts.merge(:method => 'post'))
+      # Mixin headers
+      headers = DEFAULTS[:headers].merge(extra_headers)
+      send_req(:method => 'get', :body => '', :host => uri.host, :path => uri.request_uri, :headers => extra_headers ).body
     end
     
     # Send a PUT request
@@ -86,7 +79,7 @@ class YouTubeG
        
        # Also defines the readers
        RESPONSE_ATTRS = [:status, :headers, :body]
-       attr_accessor *RESPONSE_ATTRS
+       attr_accessor(*RESPONSE_ATTRS)
        
        def initialize(opts = {})
          raise BadRequest, "Wrong attributes for the response (got #{opts.keys})" unless (RESPONSE_ATTRS.to_set == opts.keys.to_set)

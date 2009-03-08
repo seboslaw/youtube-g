@@ -14,33 +14,13 @@ class TestTransport < Test::Unit::TestCase
   
   def test_grab_should_obviously_grab
     mock_response = flexmock(:body => "fooResp")
-    rewritten_args = {:host=>"google.com", :path=>"/foo?bar=baz", :headers=>{}}
+    rewritten_args = {:path=>"/foo?bar=baz", :body=>"", :method=>"get", :host=>"google.com",
+        :headers=>{"Content-Type"=>"application/x-www-form-urlencoded"}}
     
-    flexmock(@klass).should_receive(:get_req).with(rewritten_args).once.and_return(mock_response)
+    flexmock(@klass).should_receive(:send_req).with(rewritten_args).once.and_return(mock_response)
     
     returned_body = @klass.grab("http://google.com/foo?bar=baz")
     assert_equal "fooResp", returned_body
-  end
-  
-  def test_should_support_get_req
-    rewritten_options = { :method=>"get", :host=>"google.com", :body=>"" }
-    
-    flexmock(@klass).should_receive(:send_req).once.with(rewritten_options).and_return(:response_token)
-    assert_equal :response_token, @klass.get_req(:host => 'google.com')
-  end
-
-  def test_should_support_post_req
-    rewritten_options = { :method=>"post", :host=>"google.com" }
-    
-    flexmock(@klass).should_receive(:send_req).once.with(rewritten_options).and_return(:response_token)
-    assert_equal :response_token, @klass.post_req(:host => 'google.com')
-  end
-  
-  def test_should_support_put_req
-    rewritten_options = { :method=>"put", :host=>"google.com" }
-    
-    flexmock(@klass).should_receive(:send_req).once.with(rewritten_options).and_return(:response_token)
-    assert_equal :response_token, @klass.put_req(:host => 'google.com')
   end
   
   def test_raises_on_unsupported_method
