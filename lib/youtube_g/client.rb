@@ -3,7 +3,8 @@ class YouTubeG
     include YouTubeG::Logging
     
     # Previously this was a logger instance but we now do it globally
-    def initialize(legacy_debug_flag = nil)
+    def initialize(options={})
+      @options = options.kind_of?(Hash) ? options : {}
     end
     
     # Retrieves an array of standard feed, custom query, or user videos.
@@ -54,7 +55,7 @@ class YouTubeG
       end
       
       logger.debug "Submitting request [url=#{request.url}]."
-      parser = YouTubeG::Parser::VideosFeedParser.new(request.url)
+      parser = YouTubeG::Parser::VideosFeedParser.new(request.url, client_headers)
       parser.parse
     end
     
@@ -67,7 +68,7 @@ class YouTubeG
     # YouTubeG::Model::Video
     def video_by(vid)
       video_id = vid =~ /^http/ ? vid : "http://gdata.youtube.com/feeds/videos/#{vid}"
-      parser = YouTubeG::Parser::VideoFeedParser.new(video_id)
+      parser = YouTubeG::Parser::VideoFeedParser.new(video_id, client_headers)
       parser.parse
     end
     
@@ -80,6 +81,15 @@ class YouTubeG
     def integer_or_default(value, default)
       value = value.to_i
       value > 0 ? value : default
+    end
+
+    def client_headers
+      if @client_headers.nil?
+        @client_headers = {}
+        @client_headers['X-GData-Client'] = @options[:client] if @options[:client]
+        @client_headers['X-GData-Key'] = @options[:key] if @options[:key]
+      end
+      @client_headers
     end
   end
 end

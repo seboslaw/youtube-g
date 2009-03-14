@@ -1,12 +1,13 @@
 class YouTubeG
   module Parser #:nodoc:
     class FeedParser #:nodoc:
-      def initialize(url)
+      def initialize(url, extra_headers={})
         @url = url
+        @extra_headers = extra_headers
       end
       
       def parse
-        parse_content YouTubeG.transport.grab(@url)
+        parse_content YouTubeG.transport.grab(@url, @extra_headers)
       end      
     end
     
