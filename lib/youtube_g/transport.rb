@@ -28,12 +28,12 @@ class YouTubeG
     }
     
     # Grab the page body via GET, open-uri style
-    def self.grab(url, extra_headers = DEFAULT_HEADERS)
+    def self.grab(url, extra_headers = {})
       raise BadRequest, "arg to grab should start with http(s) but was #{url}" unless url =~ /^http(s?)/ # and so on
       uri = URI.parse(url)
       # Mixin headers
       headers = DEFAULTS[:headers].merge(extra_headers)
-      send_req(:method => 'get', :body => '', :host => uri.host, :path => uri.request_uri, :headers => extra_headers ).body
+      send_req(:method => 'get', :body => '', :host => uri.host, :path => uri.request_uri, :headers => headers ).body
     end
     
     # Send a PUT request
