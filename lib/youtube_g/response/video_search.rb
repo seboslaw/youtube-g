@@ -1,6 +1,12 @@
 class YouTubeG
   module Response
     class VideoSearch < YouTubeG::Record
+      # *Fixnum*:: HTTP response code
+      attr_reader :response_code
+
+      # *Array*:: An array of error objects if the search request failed
+      attr_reader :errors
+
       # *String*:: Unique feed identifying url.
       attr_reader :feed_id 
       
@@ -35,6 +41,14 @@ class YouTubeG
 
       def total_pages
         (total_result_count / max_result_count.to_f).ceil
+      end
+
+      # Was the search successful?
+      #
+      # === Returns
+      #   Boolean: true if the request that created this object was successful
+      def request_succeeded?
+        @errors.blank? && [200,0].member?(@response_code)
       end
     end
   end

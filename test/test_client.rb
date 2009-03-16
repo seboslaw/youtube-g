@@ -197,6 +197,11 @@ class TestClient < Test::Unit::TestCase
       #assert_match(/^<div style=.*?<\/div>/m, video.html_content)
       assert_instance_of String, video.html_content
 
+      # check response & errors
+      assert_equal 200, video.response_code
+      assert_instance_of Array, video.errors
+      assert(video.errors.length == 0)
+
       # validate media content records
       video.media_content.each do |media_content|
         # http://www.youtube.com/v/IHVaXG1thXM

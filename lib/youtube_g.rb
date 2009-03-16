@@ -69,5 +69,6 @@ end
   request/video_upload
   request/video_search
   response/video_search
+  response/error
   chain_io
 ).each{|m| require File.dirname(__FILE__) + '/youtube_g/' + m }

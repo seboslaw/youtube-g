@@ -33,7 +33,7 @@ class YouTubeG
       uri = URI.parse(url)
       # Mixin headers
       headers = DEFAULTS[:headers].merge(extra_headers)
-      send_req(:method => 'get', :body => '', :host => uri.host, :path => uri.request_uri, :headers => headers ).body
+      send_req(:method => 'get', :body => '', :host => uri.host, :path => uri.request_uri, :headers => headers )
     end
     
     # Send a PUT request

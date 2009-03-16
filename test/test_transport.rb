@@ -19,7 +19,7 @@ class TestTransport < Test::Unit::TestCase
     
     flexmock(@klass).should_receive(:send_req).with(rewritten_args).once.and_return(mock_response)
     
-    returned_body = @klass.grab("http://google.com/foo?bar=baz")
+    returned_body = @klass.grab("http://google.com/foo?bar=baz").body
     assert_equal "fooResp", returned_body
   end
   

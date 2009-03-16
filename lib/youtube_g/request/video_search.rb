@@ -4,6 +4,7 @@ class YouTubeG
       # From here: http://code.google.com/apis/youtube/reference.html#yt_format
       ONLY_EMBEDDABLE = 5
 
+      attr_reader :response_code                   # http response
       attr_reader :max_results                     # max_results
       attr_reader :order_by                        # orderby, ([relevance], viewCount, published, rating)
       attr_reader :offset                          # start-index

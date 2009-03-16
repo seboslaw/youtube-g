@@ -54,6 +54,12 @@ class YouTubeG
         # RTSP streaming URL for mobile video playback. MPEG-4 SP video (up to 176x144) and AAC audio.
         THREE_GPP = YouTubeG::Model::Video::Format.new(6, :three_gpp)
       end
+
+      # *Fixnum*:: HTTP response code, this is only set for methods which return a single video
+      attr_reader :response_code
+
+      # *Array*:: an array of Error object, only set in methods which return a single video and only if the request failed
+      attr_reader :errors
       
       # *Fixnum*:: Duration of a video in seconds.
       attr_reader :duration
@@ -183,6 +189,14 @@ EDOC
       #   String: Absolute URL for embedding video
       def embed_url
         @player_url.sub('watch?', '').sub('=', '/')          
+      end
+
+      # Was the video object sucessfully retrieved?
+      #
+      # === Returns
+      #   Boolean: true if the request that created this object was successful
+      def request_succeeded?
+        @errors.blank? && [200,0].member?(@response_code)
       end
       
     end
