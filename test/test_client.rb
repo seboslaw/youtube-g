@@ -185,6 +185,30 @@ class TestClient < Test::Unit::TestCase
     assert_valid_video video
   end
   
+  def test_should_retrieve_a_valid_user_profile
+    user = @client.user_by_name("sethco")
+    assert_instance_of YouTubeG::Model::User, user
+    assert_equal 200, user.response_code
+    assert(user.errors.length == 0)
+    assert_equal "sethco", user.username
+  end
+
+  def test_should_error_on_unauthenticated_default_user
+    user = @client.user_by_name
+    assert_instance_of YouTubeG::Model::User, user
+    assert_equal 401, user.response_code
+    assert(user.errors.length == 0)
+    assert_equal nil, user.username
+  end
+
+  def test_should_error_on_nonexistent_user
+    user = @client.user_by_name("429345doesntexist")
+    assert_instance_of YouTubeG::Model::User, user
+    assert_equal 404, user.response_code
+    assert(user.errors.length == 0)
+    assert_equal nil, user.username
+  end
+
   private
 
     def assert_valid_video (video)

@@ -152,5 +152,35 @@ class YouTubeG
       end
     end
     
+  class UserFeedParser < FeedParser #:nodoc:
+
+    def parse_content(response)
+      doc = REXML::Document.new(response.body)
+      errors = YouTubeG::Response.parse_errors(doc.elements["errors"])
+      entry = doc.elements["entry"]
+
+      params = {:response_code => response.status, :errors => errors}
+
+      if entry
+        params[:id] = entry.elements["id"].text
+        params[:joined] = Time.parse(entry.elements["published"].text)
+
+        params[:username] = entry.elements["yt:username"].text
+
+        params[:view_count] = (el = entry.elements["yt:statistics"]) ? el.attributes["viewCount"].to_i : 0
+        params[:watch_count] = (el = entry.elements["yt:statistics"]) ? el.attributes["videoWatchCount"].to_i : 0
+        params[:subscriber_count] = (el = entry.elements["yt:statistics"]) ? el.attributes["subscriberCount"].to_i : 0
+
+        thumbnail = entry.elements["media:thumbnail"]
+        params[:thumbnail] = YouTubeG::Model::Thumbnail.new(:url => thumbnail.attributes["url"]) if thumbnail
+
+      end
+
+      YouTubeG::Model::User.new(params)
+    end
+    
+  end
+
   end 
+
 end

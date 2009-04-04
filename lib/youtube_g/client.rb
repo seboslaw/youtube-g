@@ -72,6 +72,19 @@ class YouTubeG
       parser.parse
     end
     
+    # Retrieves a YouTube user profile.
+    #
+    # === Parameters
+    #   user<String>:: The name of the user who you would like to retrieve, or nil for the logged in user
+    # 
+    # === Returns
+    # YouTubeG::Model::User
+    def user_by_name(user = "default")
+      url = user =~ /^http/ ? user : "http://gdata.youtube.com/feeds/users/#{user}"
+      parser = YouTubeG::Parser::UserFeedParser.new(url, client_headers)
+      parser.parse
+    end
+    
     private
     
     def calculate_offset(page, per_page)
