@@ -33,6 +33,7 @@ class YouTubeG
           # parse the category and keyword lists
           categories = []
           keywords = []
+          developer_tags = []
           entry.elements.each("category") do |category|
             # determine if  it's really a category, or just a keyword
             scheme = category.attributes["scheme"]
@@ -45,10 +46,14 @@ class YouTubeG
             elsif (scheme =~ /\/keywords\.cat$/)
               # it's a keyword
               keywords << category.attributes["term"]
+            elsif (scheme =~ /\/developertags\.cat$/)
+              # it's a developer tag
+              developer_tags << category.text
             end
           end
           params[:categories] = categories
           params[:keywords] = keywords
+          params[:developer_tags] = developer_tags
 
           params[:title] = entry.elements["title"].text
           params[:html_content] = entry.elements["content"].text
