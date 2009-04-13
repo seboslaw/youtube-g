@@ -19,21 +19,23 @@ class YouTubeG
     class BadRequest < ArgumentError
     end
     
-    REQUIRED_OPTIONS = [:host, :port, :path, :method, :headers, :body, :ssl].freeze
+    REQUIRED_OPTIONS = [:url, :method, :headers, :body].freeze
     METHODS = %w( get post put delete head )
     DEFAULT_HEADERS = { 'Content-Type' => 'application/x-www-form-urlencoded' }
-    DEFAULTS = { 
-      :port => 80,  :method => 'get', :ssl => false, :path => '/',  :body => '',
-      :headers => DEFAULT_HEADERS
-    }
+    DEFAULTS = { :method => 'get',  :body => '', :headers => DEFAULT_HEADERS }
     
     # Grab the page body via GET, open-uri style
-    def self.grab(url, extra_headers = {})
+    def self.grab(url, extra_headers = {}, opts = {})
       raise BadRequest, "arg to grab should start with http(s) but was #{url}" unless url =~ /^http(s?)/ # and so on
-      uri = URI.parse(url)
       # Mixin headers
       headers = DEFAULTS[:headers].merge(extra_headers)
-      send_req(:method => 'get', :body => '', :host => uri.host, :path => uri.request_uri, :headers => headers )
+      opts = {:method => 'get', :body => '', :url => url, :headers => headers }.merge(opts)
+      send_req(opts)
+    end
+    
+    # Send a POST request
+    def self.post_req(opts = {})
+      send_req(opts.merge(:method => 'post'))
     end
     
     # Send a PUT request
@@ -43,25 +45,8 @@ class YouTubeG
     
     def self.send_req(request_options = {})
       opts = rewrite_and_validate_options(request_options)
-      
-      meth, port, host, path, headers, body, ssl = opts.values_at(
-        :method, :port, :host, :path, :headers, :body, :ssl
-      )
-      
-      # Translate "post" to Net::HTTP::Post and instantiate
-      request = Net::HTTP.const_get(meth.to_s.capitalize).new(path, headers)
-      
-      # If body is IO, use body_stream
-      if body.respond_to?(:read)
-        request.body_stream = body
-      else
-        request.body = body
-      end
-      
-      # We use new instead of start to be able to assert
-      session = Net::HTTP.new(host, port)
-      session.use_ssl = true if ssl
-      net_http_resp = session.request(request)
+
+      net_http_resp = get_http_response(opts) 
       
       # Collect headers respecting the case, stupidly Net:HTTPHeaders does not do inject
       resp_headers = {}
@@ -94,10 +79,35 @@ class YouTubeG
      
     private
     
-    def self.rewrite_and_validate_options(options)
-      # Set port
-      (options[:port] ||= 443) if options[:ssl]
+    def self.get_http_response(opts)
+      meth, url, headers, body, net_http = opts.values_at(:method, :url, :headers, :body, :net_http)
+
+      if net_http
+        args = [meth, url]
+        args << body if [:post, :put].include? meth.to_sym
+        args << headers
+        net_http.send(*args)
+      else
+        url = URI.parse(url)
       
+        # Translate "post" to Net::HTTP::Post and instantiate
+        request = Net::HTTP.const_get(meth.to_s.capitalize).new(url.path, headers)
+      
+        # If body is IO, use body_stream
+        if body.respond_to?(:read)
+          request.body_stream = body
+        else
+          request.body = body
+        end
+      
+        # We use new instead of start to be able to assert
+        session = Net::HTTP.new(url.host, url.port)
+        session.use_ssl = true if "https" == url.scheme
+        session.request(request)
+      end
+    end
+
+    def self.rewrite_and_validate_options(options)
       # Merge with defaults
       opts = DEFAULTS.merge(options)
       
@@ -113,4 +123,5 @@ class YouTubeG
     end
     
   end
+
 end

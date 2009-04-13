@@ -122,6 +122,9 @@ class YouTubeG
       attr_reader :longitude
       
       attr_reader :statistics
+
+      # YouTubeG::Model::State:: Information about why an unpublished video is unavailable; this is only returned in an authenticated feed request for the user's own uploaded videos.
+      attr_reader :state
       
       # Videos related to the current video.
       #

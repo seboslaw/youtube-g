@@ -15,11 +15,25 @@ class YouTubeG
     #                                        :keywords => %w[cool blah test]
     #
     class VideoUpload
-      
-      def initialize user, pass, dev_key, client_id = 'youtube_g'
-        @user, @pass, @dev_key, @client_id = user, pass, dev_key, client_id
+      include YouTubeG::Request::Helper
+
+      DEFAULT_OPTIONS = {:user => 'default'}.freeze
+
+      attr_reader :init_options
+
+      def initialize(options)
+        @init_options = DEFAULT_OPTIONS.merge(options)
       end
-      
+
+      def self.new(*posargs_or_options)
+        if posargs_or_options.length > 1 # use old-style positional args
+          YouTubeG.logger.error "Positional arguments for VideoUpload.new are deprecated"
+          new(translate_posargs(*posargs_or_options))
+        else
+          super(posargs_or_options.first || {}) # use the kwargs, super is just vanilla constructor
+        end
+      end
+  
       #
       # Upload "data" to youtube, where data is either an IO object or
       # raw file data.
@@ -49,22 +63,19 @@ class YouTubeG
         
         post_body_io = generate_upload_io(video_xml, data)
         
-        upload_headers = authorization_headers.merge({
+        upload_headers = request_headers.merge({
             "Slug"           => "#{@opts[:filename]}",
             "Content-Type"   => "multipart/related; boundary=#{boundary}",
             "Content-Length" => "#{post_body_io.expected_length}", # required per YouTube spec
           # "Transfer-Encoding" => "chunked" # We will stream instead of posting at once
         })
         
-        path = '/feeds/api/users/%s/uploads' % @user
+        url = 'http://%s/feeds/api/users/%s/uploads' % [uploads_url, init_options[:user]]
         
-        resp = YouTubeG.transport.send_req(
-          :method => 'post',
-          :host => uploads_url,
-          :body => post_body_io,
-          :headers => upload_headers,
-          :path => path
+        response = YouTubeG.transport.send_req(
+          request_options.merge({ :method => 'post', :url => url, :body => post_body_io, :headers => upload_headers})
         )
+
         
         raise_on_faulty_response(response)
         return uploaded_video_id_from(response.body)
@@ -81,32 +92,41 @@ class YouTubeG
       def update(video_id, options)
         @opts = options
         
-        update_header = authorization_headers.merge({
+        update_body = video_xml
+        update_header = request_headers.merge({
           "Content-Type"   => "application/atom+xml",
           "Content-Length" => "#{update_body.length}",
         })
         
-        update_url = "/feeds/api/users/#{@user}/uploads/#{video_id}"
-        response = YouTubeG.transport.send_req(:method => 'put', :path => update_url, :headers => update_header, :body => video_xml)
+        update_url = 'http://%s/feeds/api/users/%s/uploads/%s' % [base_url, init_options[:user], video_id]
+
+        response = YouTubeG.transport.send_req(request_options.merge({:method => 'put', :url => update_url, :headers => update_header, :body => update_body}))
         raise_on_faulty_response(response)
-        return YouTubeG::Parser::VideoFeedParser.new(response.body).parse
+        return YouTubeG::Parser::VideoFeedParser.new('').parse_content(response)
       end
       
       # Delete a video on YouTube
       def delete(video_id)
-        delete_header = authorization_headers.merge({
+        delete_header = request_headers.merge({
           "Content-Type"   => "application/atom+xml",
           "Content-Length" => "0",
         })
         
-        delete_url = "/feeds/api/users/#{@user}/uploads/#{video_id}"
-        response = YouTubeG.transport.send_req(:method => 'delete', :path => delete_url, :headers => delete_header)
+        delete_url = 'http://%s/feeds/api/users/%s/uploads/%s' % [base_url, init_options[:user], video_id]
+
+        response = YouTubeG.transport.send_req(request_options.merge({:method => 'delete', :url => delete_url, :headers => delete_header}))
         raise_on_faulty_response(response)
         true
       end
       
-      private
+      #private
       
+      def self.translate_posargs(user, pass, dev_key, client_id = 'youtube_g')
+        h = { :user => user, :password => pass, :key => dev_key, :client => client_id }
+        h[:auth] = :client_login if pass
+        h
+      end
+    
       def uploads_url
         ["uploads", base_url].join('.')
       end
@@ -124,16 +144,8 @@ class YouTubeG
         "An43094fu"
       end
       
-      def authorization_headers
-        {
-          "Authorization"  => "GoogleLogin auth=#{auth_token}",
-          "X-GData-Client" => "#{@client_id}",
-          "X-GData-Key"    => "key=#{@dev_key}"
-        }
-      end
-      
       def parse_upload_error_from(string)
-        REXML::Document.new(string).elements["//errors"].inject('') do | all_faults, error|
+        (REXML::Document.new(string).elements["//errors"] || []).inject('') do | all_faults, error|
           location = error.elements["location"].text[/media:group\/media:(.*)\/text\(\)/,1]
           code = error.elements["code"].text
           all_faults + sprintf("%s: %s\n", location, code)
@@ -141,9 +153,9 @@ class YouTubeG
       end
       
       def raise_on_faulty_response(response)
-        if response.code.to_i == 403
+        if [401,403].include? response.status.to_i
           raise AuthenticationError, response.body[/<TITLE>(.+)<\/TITLE>/, 1]
-        elsif response.code.to_i != 200
+        elsif ![200, 201].include? response.status.to_i
           raise UploadError, parse_upload_error_from(response.body)
         end 
       end
@@ -167,31 +179,20 @@ class YouTubeG
         end
       end
       
-      def auth_token
-        @auth_token ||= begin
-          response.body = YouTubeG.transport.post_req(
-            :ssl => true, :host => 'www.google.com',
-            :body => "Email=#{YouTubeG.esc @user}&Passwd=#{YouTubeG.esc @pass}&service=youtube&source=#{YouTubeG.esc @client_id}",
-            :path => "/youtube/accounts/ClientLogin"
-          )
-          raise UploadError, response.body[/Error=(.+)/,1] if response.code.to_i != 200
-          @auth_token = response.body[/Auth=(.+)/, 1]
-        end
-      end
-      
       # TODO: isn't there a cleaner way to output top-notch XML without requiring stuff all over the place?
       def video_xml
-        b = Builder::XML.new
+        b = Builder::XmlMarkup.new
         b.instruct!
-        b.entry(:xmlns => "http://www.w3.org/2005/Atom", 'xmlns:media' => "http://search.yahoo.com/mrss/", 'xmlns:yt' => "http://gdata.youtube.com/schemas/2007") do | m |
+        xml = b.entry(:xmlns => "http://www.w3.org/2005/Atom", 'xmlns:media' => "http://search.yahoo.com/mrss/", 'xmlns:yt' => "http://gdata.youtube.com/schemas/2007") do | m |
           m.tag!("media:group") do | mg |
-            mg.tag!("media:title", :type => "plain") { @opts[:title] }
-            mg.tag!("media:description", :type => "plain") { @opts[:description] }
-            mg.tag!("media:keywords") { @opts[:keywords].join(",") }
-            mg.tag!('media:category', :scheme => "http://gdata.youtube.com/schemas/2007/categories.cat") { @opts[:category] }
+            mg.tag!("media:title", :type => "plain") {|x| x << @opts[:title] } if @opts[:title]
+            mg.tag!("media:description", :type => "plain") {|x| x << @opts[:description] } if @opts[:description]
+            mg.tag!("media:keywords") {|x| x << @opts[:keywords].join(",") } if @opts[:keywords]
+            mg.tag!('media:category', :scheme => "http://gdata.youtube.com/schemas/2007/categories.cat") {|x| x << @opts[:category] } if @opts[:category]
             mg.tag!('yt:private') if @opts[:private]
           end
         end.to_s
+        xml
       end
       
       def generate_upload_io(video_xml, data)

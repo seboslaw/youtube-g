@@ -1,10 +1,11 @@
 class YouTubeG
   class Client
     include YouTubeG::Logging
+    include YouTubeG::Request::Helper
     
     # Previously this was a logger instance but we now do it globally
     def initialize(options={})
-      @options = options.kind_of?(Hash) ? options : {}
+      @init_options = options.kind_of?(Hash) ? options : {}
     end
     
     # Retrieves an array of standard feed, custom query, or user videos.
@@ -55,7 +56,7 @@ class YouTubeG
       end
       
       logger.debug "Submitting request [url=#{request.url}]."
-      parser = YouTubeG::Parser::VideosFeedParser.new(request.url, client_headers)
+      parser = YouTubeG::Parser::VideosFeedParser.new(request.url, request_headers, request_options)
       parser.parse
     end
     
@@ -68,7 +69,7 @@ class YouTubeG
     # YouTubeG::Model::Video
     def video_by(vid)
       video_id = vid =~ /^http/ ? vid : "http://gdata.youtube.com/feeds/videos/#{vid}"
-      parser = YouTubeG::Parser::VideoFeedParser.new(video_id, client_headers)
+      parser = YouTubeG::Parser::VideoFeedParser.new(video_id, request_headers, request_options)
       parser.parse
     end
     
@@ -81,11 +82,11 @@ class YouTubeG
     # YouTubeG::Model::User
     def user_by_name(user = "default")
       url = user =~ /^http/ ? user : "http://gdata.youtube.com/feeds/users/#{user}"
-      parser = YouTubeG::Parser::UserFeedParser.new(url, client_headers)
+      parser = YouTubeG::Parser::UserFeedParser.new(url, request_headers, request_options)
       parser.parse
     end
     
-    private
+    #private
     
     def calculate_offset(page, per_page)
       page == 1 ? 1 : ((per_page * page) - per_page + 1)
@@ -96,13 +97,5 @@ class YouTubeG
       value > 0 ? value : default
     end
 
-    def client_headers
-      if @client_headers.nil?
-        @client_headers = {}
-        @client_headers['X-GData-Client'] = @options[:client] if @options[:client]
-        @client_headers['X-GData-Key'] = @options[:key] if @options[:key]
-      end
-      @client_headers
-    end
   end
 end

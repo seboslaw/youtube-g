@@ -49,7 +49,9 @@ class YouTubeG
 end
 
 %w( 
+  request/helper
   version
+  error
   transport
   client
   record
@@ -63,6 +65,7 @@ end
   model/thumbnail
   model/user
   model/video
+  model/state
   request/base_search
   request/user_search
   request/standard_search

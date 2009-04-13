@@ -66,6 +66,10 @@ class YouTubeG::GreedyChainIO < DelegateClass(YouTubeG::ChainIO)
   def read(any_buffer_size)
     __getobj__.read(BIG_CHUNK)
   end
+
+  def length()
+    __getobj__.expected_length
+  end
 end
 
 #:startdoc:

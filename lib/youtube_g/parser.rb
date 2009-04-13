@@ -1,13 +1,15 @@
 class YouTubeG
   module Parser #:nodoc:
     class FeedParser #:nodoc:
-      def initialize(url, extra_headers={})
+      def initialize(url, extra_headers={}, auth_opts={})
         @url = url
         @extra_headers = extra_headers
+        @auth_opts = auth_opts
       end
       
       def parse
-        parse_content YouTubeG.transport.grab(@url, @extra_headers)
+        content = YouTubeG.transport.grab(@url, @extra_headers, @auth_opts)
+        parse_content content
       end      
     end
     
@@ -60,16 +62,26 @@ class YouTubeG
           end
       
           media_group = entry.elements["media:group"]
-          params[:description] = media_group.elements["media:description"].text
-          params[:duration] = media_group.elements["yt:duration"].attributes["seconds"].to_i
+          if media_group
+            params[:description] = media_group.elements["media:description"].text
+            params[:duration] = media_group.elements["yt:duration"].attributes["seconds"].to_i
 
-          media_content = []
-          media_group.elements.each("media:content") do |mce|
-            media_content << parse_media_content(mce)
+            media_content = []
+            media_group.elements.each("media:content") do |mce|
+              media_content << parse_media_content(mce)
+            end
+            params[:media_content] = media_content
+
+            player = media_group.elements["media:player"]
+            params[:player_url] = player.attributes["url"] if player
           end
-          params[:media_content] = media_content
-
-          params[:player_url] = media_group.elements["media:player"].attributes["url"]
+          
+          control = entry.elements["app:control"] 
+          state = control.elements["yt:state"] if control
+          params[:state] = YouTubeG::Model::State.new(
+                              :name => state.attributes["name"],
+                              :reason => state.attributes["reasonCode"],
+                              :help_url => state.attributes["helpUrl"]) if state
 
           # parse thumbnails
           thumbnails = []
