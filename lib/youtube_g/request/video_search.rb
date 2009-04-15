@@ -29,7 +29,7 @@ class YouTubeG
         # Return a single video (base_url + /T7YazwP8GtY)
         return @url << "/" << params[:video_id] if params[:video_id]
         
-        @url << "/-/" if (params[:categories] || params[:tags] || (params[:developer_tags])
+        @url << "/-/" if (params[:categories] || params[:tags] || (params[:developer_tags]))
         @url << categories_to_params(params.delete(:categories)) if params[:categories]
         @url << tags_to_params(params.delete(:tags)) if params[:tags]
         @url << developer_tags_to_params(params.delete(:developer_tags)) if params[:developer_tags]
