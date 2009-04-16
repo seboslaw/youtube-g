@@ -63,13 +63,22 @@ class YouTubeG
     # Retrieves a single YouTube video.
     #
     # === Parameters
-    #   vid<String>:: The ID or URL of the video that you'd like to retrieve.
+    #   params<Hash>:: key :video_id with the unique_id or video_id to load, optional key :user for the user to load
+    #                  (:user is required to retrieve data on unpublished videos).  For legacy purposes, params can also
+    #                  be a string containing the video_id
     # 
     # === Returns
     # YouTubeG::Model::Video
-    def video_by(vid)
-      video_id = vid =~ /^http/ ? vid : "http://gdata.youtube.com/feeds/videos/#{vid}"
-      parser = YouTubeG::Parser::VideoFeedParser.new(video_id, request_headers, request_options)
+    def video_by(params)
+      params = {:video_id => params} if !params.is_a?(Hash)
+      url = "http://gdata.youtube.com/feeds/api/"
+      video_id = params[:video_id].split("/").last
+      if params[:user]
+        url << "users/#{params[:user]}/uploads/#{video_id}"
+      else
+        url << "videos/#{video_id}"
+      end
+      parser = YouTubeG::Parser::VideoFeedParser.new(url, request_headers, request_options)
       parser.parse
     end
     
