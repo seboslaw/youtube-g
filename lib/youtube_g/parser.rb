@@ -55,8 +55,8 @@ class YouTubeG
           params[:keywords] = keywords
           params[:developer_tags] = developer_tags
 
-          params[:title] = entry.elements["title"].text
-          params[:html_content] = entry.elements["content"].text
+          params[:title] = entry.elements["title"].text if entry.elements["title"]
+          params[:html_content] = entry.elements["content"].text if entry.elements["content"]
 
           # parse the author
           author_element = entry.elements["author"]
@@ -68,8 +68,8 @@ class YouTubeG
       
           media_group = entry.elements["media:group"]
           if media_group
-            params[:description] = media_group.elements["media:description"].text
-            params[:duration] = media_group.elements["yt:duration"].attributes["seconds"].to_i
+            params[:description] = media_group.elements["media:description"].text if media_group.elements["media:description"]
+            params[:duration] = media_group.elements["yt:duration"].attributes["seconds"].to_i if media_group.elements["yt:duration"]
 
             media_content = []
             media_group.elements.each("media:content") do |mce|
@@ -79,6 +79,15 @@ class YouTubeG
 
             player = media_group.elements["media:player"]
             params[:player_url] = player.attributes["url"] if player
+
+            media_group.elements.each("media:category") do |category|
+              # determine if  it's really a category, or just a keyword
+              scheme = category.attributes["scheme"]
+              if (scheme =~ /\/developertags\.cat$/)
+                # it's a developer tag
+                developer_tags << category.text if !developer_tags.include?( category.text )
+              end
+            end
           end
           
           control = entry.elements["app:control"] 

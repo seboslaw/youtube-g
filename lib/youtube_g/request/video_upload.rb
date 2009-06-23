@@ -76,7 +76,6 @@ class YouTubeG
         response = YouTubeG.transport.send_req(
           request_options.merge({ :method => 'post', :url => url, :body => post_body_io, :headers => upload_headers})
         )
-
         
         raise_on_faulty_response(response)
         return uploaded_video_id_from(response.body)
@@ -146,18 +145,22 @@ class YouTubeG
       end
       
       def parse_upload_error_from(string)
-        (REXML::Document.new(string).elements["//errors"] || []).inject('') do | all_faults, error|
-          location = error.elements["location"].text[/media:group\/media:(.*)\/text\(\)/,1]
-          code = error.elements["code"].text
-          all_faults + sprintf("%s: %s\n", location, code)
+        begin
+          (REXML::Document.new(string).elements["//errors"] || []).inject('') do | all_faults, error|
+            location = error.elements["location"].text[/media:group\/media:(.*)\/text\(\)/,1]
+            code = error.elements["code"].text
+            all_faults + sprintf("%s: %s\n", location, code)
+          end
+        rescue Exception => ex
+          string
         end
       end
       
       def raise_on_faulty_response(response)
         if [401,403].include? response.status.to_i
-          raise AuthenticationError, response.body[/<TITLE>(.+)<\/TITLE>/, 1]
+          raise AuthenticationError, "#{response.status}: #{response.body[/<TITLE>(.+)<\/TITLE>/, 1]}"
         elsif ![200, 201].include? response.status.to_i
-          raise UploadError, parse_upload_error_from(response.body)
+          raise UploadError, "#{response.status}: #{parse_upload_error_from(response.body)}"
         end 
       end
       
