@@ -27,7 +27,7 @@ class YouTubeG
 
       def self.new(*posargs_or_options)
         if posargs_or_options.length > 1 # use old-style positional args
-          YouTubeG.logger.error "Positional arguments for VideoUpload.new are deprecated"
+#          YouTubeG.logger.error "Positional arguments for VideoUpload.new are deprecated"
           new(translate_posargs(*posargs_or_options))
         else
           super(posargs_or_options.first || {}) # use the kwargs, super is just vanilla constructor

@@ -55,7 +55,7 @@ class YouTubeG
         request = YouTubeG::Request::StandardSearch.new(params, request_params)
       end
       
-      logger.debug "Submitting request [url=#{request.url}]."
+#      logger.debug "Submitting request [url=#{request.url}]."
       parser = YouTubeG::Parser::VideosFeedParser.new(request.url, request_headers, request_options)
       parser.parse
     end
