@@ -1,9 +1,9 @@
 Gem::Specification.new do |s|
   s.name = %q{youtube-g}
-  s.version = "0.5.1"
+  s.version = "0.5.2"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
-  s.authors = ["Shane Vitarana", "Walter Korman", "Aman Gupta", "Filip H.F. Slagter", "msp"]
+  s.authors = ["Shane Vitarana", "Walter Korman", "Aman Gupta", "Filip H.F. Slagter", "msp", "Sebastian Vogelsang"]
   s.date = %q{2009-03-02}
   s.description = %q{youtube-g is a pure Ruby client for the YouTube GData API. It provides an easy way to access the latest YouTube video search results from your own programs. In comparison with the earlier Youtube search interfaces, this new API and library offers much-improved flexibility around executing complex search queries to obtain well-targeted video search results.  More detail on the underlying source Google-provided API is available at:  http://code.google.com/apis/youtube/overview.html}
   s.email = %q{shanev@gmail.com}
