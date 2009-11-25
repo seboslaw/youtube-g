@@ -7,7 +7,7 @@ class YouTubeG
       # id, updated, category*, title, content?, link*, author?, summary?, yt:countHint
 
       # *String*:: id for the channel.
-      attr_reader :id
+      attr_reader :channel_id
 
       # *Time*:: When the channel's data was last updated.
       attr_reader :updated_at
@@ -40,7 +40,7 @@ class YouTubeG
       # === Returns
       #   String: The Youtube channel id.
       def unique_id
-        id[/channel:([^<]+)/, 1]
+        channel_id[/channel:([^<]+)/, 1]
       end
 
       # The maximal page number for channel videos set.
