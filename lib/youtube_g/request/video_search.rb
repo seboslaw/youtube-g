@@ -16,6 +16,7 @@ class YouTubeG
       attr_reader :racy                            # racy ([exclude], include)
       attr_reader :author
       attr_reader :developer_tags                  # /-/{http://gdata.youtube.com/schemas/2007/developertags.cat}tag1
+      attr_reader :time
       
       def initialize(params={})
         # Initialize our various member data to avoid warnings and so we'll
@@ -23,7 +24,7 @@ class YouTubeG
         @max_results, @order_by, 
         @offset, @query, 
         @response_format, @video_format, 
-        @racy, @author = nil
+        @racy, @author, @time = nil
         @url = base_url
         
         # Return a single video (base_url + /T7YazwP8GtY)
@@ -58,7 +59,8 @@ class YouTubeG
           'alt' => @response_format,
           'format' => @video_format,
           'racy' => @racy,
-          'author' => @author
+          'author' => @author,
+          'time' => @time
         }
       end
 
