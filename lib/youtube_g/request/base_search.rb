@@ -4,7 +4,7 @@ class YouTubeG
 
       attr_reader :url
 
-      include Utils
+      # include Utils
       
       private
       
@@ -20,7 +20,7 @@ class YouTubeG
       end
       
       def build_query_params(params)
-        qs = join_params(params)
+        qs = params.to_a.map { | k, v | v.nil? ? nil : "#{YouTubeG.esc(k)}=#{YouTubeG.esc(v)}" }.compact.sort.join('&')
         qs.empty? ? '' : "?#{qs}"
       end
 
